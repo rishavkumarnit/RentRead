@@ -1,24 +1,17 @@
 package com.rishav.RentRead.Controller;
 
 
-import java.util.List;
-
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.rishav.RentRead.Entity.Book;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 import com.rishav.RentRead.Services.BookService;
-
+import com.rishav.RentRead.model.Book;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -34,28 +27,31 @@ public class BookController {
 
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<Book> getallbooks(@RequestParam String email){
-        log.info("User {} is attempting to get list of all books", email);
-        return bookService.getallBooks();
+    public ResponseEntity<List<Book>> getAllBooks() {
+        log.info("Getting all books");
+        List<Book> books = bookService.getallBooks();
+        log.info("Books fetched successfully");
+        return new ResponseEntity<>(books, HttpStatus.OK);
     }
 
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Book create(@RequestBody Book book) {
-        log.info("Admin is attempting to create a new book with ID: {}", book.getBookId());
+        log.info("Admin is attempting to create a new book with ID: {}", book.getId());
         Book createdbook = bookService.create(book);
-        log.info("Admin has created a new book with ID: {}", createdbook.getBookId());
+        log.info("Admin has created a new book with ID: {}", createdbook.getId());
         return createdbook;
 
     }
 
 
-    @PostMapping("/{bookId}/rent")
+    @PutMapping("/{bookId}/rent")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated")
-    public Book rentBook(@RequestParam String email, @PathVariable long bookId) {
+    public Book rentBook( @PathVariable long bookId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         log.info("User {} is attempting to rent book with ID: {}", email, bookId);
         Book rentedbook =  bookService.renttheBook(email, bookId);
         log.info("User {} has successfully rented the book with ID: {}", email, bookId);
@@ -63,10 +59,12 @@ public class BookController {
     }
 
 
-    @PostMapping("/{bookId}/return")
+    @PutMapping("/{bookId}/return")
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("isAuthenticated")
-    public Book returnBook(@RequestParam String email, @PathVariable long bookId) {
+    public Book returnBook( @PathVariable long bookId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
         log.info("User {} is attempting to return book with ID: {}", email, bookId);
         Book returnedbook =  bookService.returntheBook(email, bookId);
         log.info("User {} is attempting to return book with ID: {}", email, bookId);

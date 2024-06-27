@@ -1,8 +1,7 @@
 package com.rishav.RentRead.Config;
 
 
-
-
+import com.rishav.RentRead.model.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,8 +17,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import com.rishav.RentRead.Services.*;
 
-import com.rishav.RentRead.Services.UserService;
 
 
 
@@ -28,43 +27,45 @@ import com.rishav.RentRead.Services.UserService;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+
     @Autowired
-    private UserService userService;
+    UserService userService;
 
+    
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-
+    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(csrf -> csrf.disable());
-
         httpSecurity.authenticationProvider(authenticationProvider());
-
         httpSecurity.authorizeHttpRequests(configurer -> configurer
-                .requestMatchers("/users/login", "/users/register")
+                .requestMatchers("/users/login", "/users/register","/books")
                 .permitAll()
-                .requestMatchers(HttpMethod.POST, "/books").hasAuthority("ROLE_ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/books/{id}").hasAuthority("ROLE_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/books").hasAuthority(Role.ADMIN.name())
+                .requestMatchers(HttpMethod.DELETE, "/books/{bookId}").hasAuthority(Role.ADMIN.name())
                 .anyRequest()
                 .authenticated());
-
         httpSecurity.httpBasic(Customizer.withDefaults());
-
         return httpSecurity.build();
     }
 
+
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
-    public AuthenticationProvider authenticationProvider() {
+
+    @Bean
+    AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setUserDetailsService(userService);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
 
+
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }

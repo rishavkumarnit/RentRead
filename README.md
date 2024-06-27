@@ -69,4 +69,6 @@ spring.jpa.hibernate.ddl-auto=update
 
 **The server will start and be accessible at http://localhost:8080**
 
+
+To know more Navigate : [Postman API Documentation](https://www.postman.com/technical-cosmonaut-13105159/workspace/my-workspace/collection/36174974-35ee104e-e0df-4fe5-93e8-20ec13e70fa7?action=share&creator=36174974)
 ___

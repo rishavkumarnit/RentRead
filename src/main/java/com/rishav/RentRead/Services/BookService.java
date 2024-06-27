@@ -2,8 +2,9 @@ package com.rishav.RentRead.Services;
 
 
 import java.util.*;
-import com.rishav.RentRead.Entity.*;
+
 import com.rishav.RentRead.Repository.*;
+import com.rishav.RentRead.model.*;
 import com.rishav.RentRead.Exception.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,10 @@ public class BookService {
 
 
     public Book create(Book book) {
-        if (book.gettitle().trim().isEmpty() || book.getauthor().trim().isEmpty() || book.getgenre().trim().isEmpty()) {
+        if (book.getTitle().trim().isEmpty() || book.getAuthor().trim().isEmpty() || book.getGenre().trim().isEmpty()) {
             throw new BlankException("Title/Author/Genre can't be blank");
         }
+        book.setAvailable(true);
         return bookRepo.save(book);
     }
 
@@ -54,11 +56,15 @@ public class BookService {
         if (!book.isPresent()) {
             throw new NotfoundException("Book not found");
         }
-        if(user.get().getaddedBooks().size() == 2){
+        if(user.get().getBooks().size() == 2){
             throw new BooklimitException("User already have two rented books"); 
         }
-        book.get().setavailablity(false);
-        user.get().getaddedBooks().add(book.get());
+        if (!book.get().getAvailable()) {
+            throw new BooklimitException("Book is already rented out");
+        }
+        book.get().setAvailable(false);
+        book.get().setUser(user.get());
+        user.get().getBooks().add(book.get());
         userRepo.save(user.get());
         bookRepo.save(book.get());
         return book.get();
@@ -74,27 +80,17 @@ public class BookService {
         if (!book.isPresent()) {
             throw new NotfoundException("Book not found");
         }
-        if(!userhavetheBook(user.get(), book.get())){
-            throw new NotfoundException("Book not rented to the user");  
+        List<Book> books = user.get().getBooks();
+        if (!books.contains(book.get())) {
+            throw new NotfoundException("Book is not found");
         }
-        if(book.get().getavailablity() == false){
-            throw new BooklimitException("The book is already rented out"); 
-        }
-        book.get().setavailablity(true);  
+        
+        user.get().getBooks().remove(book.get()); 
+        book.get().setAvailable(true);
+        book.get().setUser(null);
         userRepo.save(user.get());
         bookRepo.save(book.get());
         return book.get();
-    }
-
-
-    private boolean userhavetheBook(User user, Book book){
-        for(int i =0; i < 2; i++){
-            if(user.getaddedBooks().get(i).getBookId() == book.getBookId()){
-                user.getaddedBooks().remove(i); 
-                return true;
-            }
-        }
-        return false;
     }
     
 }
